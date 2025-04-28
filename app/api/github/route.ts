@@ -4,7 +4,9 @@ import { NextResponse, NextRequest } from 'next/server'
 
 async function fetchGitHubAPI(path: string, token: string | undefined) {
   const headers: HeadersInit = {
-    Accept: 'application/vnd.github.v3+json'
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'codeclimbers-io-app',
+    'X-GitHub-Api-Version': '2022-11-28'
   }
   // Log whether the token was *received* by the function
   console.log(`[DEV] Inside fetchGitHubAPI - received token defined: ${!!token}, length: ${token?.length ?? 0}`)

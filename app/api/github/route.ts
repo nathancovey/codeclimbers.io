@@ -1,20 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server'
 
-const GITHUB_TOKEN = process.env.GITHUB_PAT
-// Add logging to verify the token in the environment
-console.log(`GITHUB_PAT value read: ${GITHUB_TOKEN ? 'Token loaded (length: ' + GITHUB_TOKEN.length + ')' : 'Token NOT loaded or empty'}`)
+// Remove logging here as it didn't show up
+// console.log(`GITHUB_PAT value read: ...`)
 
-async function fetchGitHubAPI(path: string) {
+async function fetchGitHubAPI(path: string, token: string | undefined) {
   const headers: HeadersInit = {
     Accept: 'application/vnd.github.v3+json',
   }
-  // Log whether the token is present *before* adding the header
-  console.log(`Inside fetchGitHubAPI - GITHUB_TOKEN is defined: ${!!GITHUB_TOKEN}`)
-  if (GITHUB_TOKEN) {
-    headers['Authorization'] = `token ${GITHUB_TOKEN}`
-    console.log('Authorization header added.') // Log if the header is added
+  // Log whether the token was *received* by the function
+  console.log(`Inside fetchGitHubAPI - received token is defined: ${!!token}`)
+  if (token) {
+    headers['Authorization'] = `token ${token}` // Use the passed token
+    console.log('Authorization header added using passed token.')
   } else {
-    console.log('Authorization header NOT added because GITHUB_TOKEN is missing.')
+    console.log('Authorization header NOT added because passed token is missing.')
   }
 
   const url = `https://api.github.com${path}`
@@ -41,6 +40,11 @@ async function fetchGitHubAPI(path: string) {
 }
 
 export async function GET(request: NextRequest) {
+  // Read the environment variable *inside* the handler
+  const githubToken = process.env.GITHUB_PAT
+  // Log whether the token is defined *within the handler scope*
+  console.log(`Inside GET handler - GITHUB_PAT is defined: ${!!githubToken}`)
+
   const { searchParams } = new URL(request.url)
   const owner = searchParams.get('owner')
   const repo = searchParams.get('repo')
@@ -58,21 +62,23 @@ export async function GET(request: NextRequest) {
       case 'stars':
         if (!repo) return NextResponse.json({ error: 'Missing repo parameter for stars' }, { status: 400 })
         apiPath = `/repos/${owner}/${repo}`
-        data = await fetchGitHubAPI(apiPath)
+        // Pass the token read within the handler
+        data = await fetchGitHubAPI(apiPath, githubToken)
         if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
         return NextResponse.json({ stars: data.stargazers_count ?? 0 })
 
       case 'followers':
         apiPath = `/users/${owner}`
-        data = await fetchGitHubAPI(apiPath)
+        // Pass the token read within the handler
+        data = await fetchGitHubAPI(apiPath, githubToken)
         if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
         return NextResponse.json({ followers: data.followers ?? 0 })
 
       case 'contributors':
         if (!repo) return NextResponse.json({ error: 'Missing repo parameter for contributors' }, { status: 400 })
         apiPath = `/repos/${owner}/${repo}/contributors`
-        // Fetch full contributor list, might need pagination for large repos
-        data = await fetchGitHubAPI(apiPath)
+        // Pass the token read within the handler
+        data = await fetchGitHubAPI(apiPath, githubToken)
         if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
         // Return simplified contributor data (can adjust as needed)
         const contributors = Array.isArray(data) ? data.map((c: any) => ({ 

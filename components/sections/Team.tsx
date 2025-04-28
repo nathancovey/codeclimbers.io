@@ -31,7 +31,8 @@ async function getContributors(owner: string, repo: string): Promise<Contributor
     : 'http://localhost:3000' // Default to localhost if not on Vercel
   const apiUrl = `${baseUrl}/api/github?owner=${owner}&repo=${repo}&what=contributors`
   
-  console.log(`Fetching contributors from: ${apiUrl}`)
+  // Log the constructed API URL right before fetching
+  console.log(`[Team Component] Fetching contributors from: ${apiUrl}`) 
 
   try {
     const res = await fetch(apiUrl, {

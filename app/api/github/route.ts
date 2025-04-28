@@ -40,63 +40,78 @@ async function fetchGitHubAPI(path: string, token: string | undefined) {
 }
 
 export async function GET(request: NextRequest) {
-  // Simplest possible log to check if the handler is entered
-  console.log("API Route /api/github GET handler started")
-
-  // Read the environment variable *inside* the handler
-  const githubToken = process.env.GITHUB_PAT
-  // Log whether the token is defined *within the handler scope*
-  console.log(`Inside GET handler - GITHUB_PAT is defined: ${!!githubToken}`)
-
-  const { searchParams } = new URL(request.url)
-  const owner = searchParams.get('owner')
-  const repo = searchParams.get('repo')
-  const what = searchParams.get('what') || 'stars' // Default to fetching stars
-
-  if (!owner) {
-    return NextResponse.json({ error: 'Missing owner parameter' }, { status: 400 })
-  }
-
-  let data: any
-  let apiPath: string
-
+  // Wrap entire handler body in try...catch
   try {
-    switch (what) {
-      case 'stars':
-        if (!repo) return NextResponse.json({ error: 'Missing repo parameter for stars' }, { status: 400 })
-        apiPath = `/repos/${owner}/${repo}`
-        // Pass the token read within the handler
-        data = await fetchGitHubAPI(apiPath, githubToken)
-        if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
-        return NextResponse.json({ stars: data.stargazers_count ?? 0 })
+    // Simplest possible log to check if the handler is entered
+    console.log("API Route /api/github GET handler started")
 
-      case 'followers':
-        apiPath = `/users/${owner}`
-        // Pass the token read within the handler
-        data = await fetchGitHubAPI(apiPath, githubToken)
-        if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
-        return NextResponse.json({ followers: data.followers ?? 0 })
+    // Read the environment variable *inside* the handler
+    const githubToken = process.env.GITHUB_PAT
+    // Log whether the token is defined *within the handler scope*
+    console.log(`Inside GET handler - GITHUB_PAT is defined: ${!!githubToken}`)
 
-      case 'contributors':
-        if (!repo) return NextResponse.json({ error: 'Missing repo parameter for contributors' }, { status: 400 })
-        apiPath = `/repos/${owner}/${repo}/contributors`
-        // Pass the token read within the handler
-        data = await fetchGitHubAPI(apiPath, githubToken)
-        if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
-        // Return simplified contributor data (can adjust as needed)
-        const contributors = Array.isArray(data) ? data.map((c: any) => ({ 
-          login: c.login,
-          avatar_url: c.avatar_url,
-          contributions: c.contributions,
-          html_url: c.html_url
-        })) : []
-        return NextResponse.json(contributors)
+    const { searchParams } = new URL(request.url)
+    const owner = searchParams.get('owner')
+    const repo = searchParams.get('repo')
+    const what = searchParams.get('what') || 'stars' // Default to fetching stars
 
-      default:
-        return NextResponse.json({ error: 'Invalid value for \'what\' parameter' }, { status: 400 })
+    if (!owner) {
+      console.error("API Route /api/github: Missing owner parameter") // Log error before returning
+      return NextResponse.json({ error: 'Missing owner parameter' }, { status: 400 })
     }
-  } catch (error: any) {
-    console.error(`Unexpected error in GET handler:`, error)
+
+    let data: any
+    let apiPath: string
+
+    // Keep the inner try...catch for fetchGitHubAPI errors
+    try {
+      switch (what) {
+        case 'stars':
+          if (!repo) {
+            console.error("API Route /api/github: Missing repo parameter for stars") // Log error
+            return NextResponse.json({ error: 'Missing repo parameter for stars' }, { status: 400 })
+          }
+          apiPath = `/repos/${owner}/${repo}`
+          data = await fetchGitHubAPI(apiPath, githubToken)
+          if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
+          return NextResponse.json({ stars: data.stargazers_count ?? 0 })
+
+        case 'followers':
+          apiPath = `/users/${owner}`
+          data = await fetchGitHubAPI(apiPath, githubToken)
+          if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
+          return NextResponse.json({ followers: data.followers ?? 0 })
+
+        case 'contributors':
+          if (!repo) {
+            console.error("API Route /api/github: Missing repo parameter for contributors") // Log error
+            return NextResponse.json({ error: 'Missing repo parameter for contributors' }, { status: 400 })
+          }
+          apiPath = `/repos/${owner}/${repo}/contributors`
+          data = await fetchGitHubAPI(apiPath, githubToken)
+          if (data.error) return NextResponse.json({ error: data.error }, { status: data.status || 500 })
+          const contributors = Array.isArray(data) ? data.map((c: any) => ({ 
+            login: c.login,
+            avatar_url: c.avatar_url,
+            contributions: c.contributions,
+            html_url: c.html_url
+          })) : []
+          return NextResponse.json(contributors)
+
+        default:
+          console.error(`API Route /api/github: Invalid value for \'what\' parameter: ${what}`) // Log error
+          return NextResponse.json({ error: 'Invalid value for \'what\' parameter' }, { status: 400 })
+      }
+    } catch (fetchError: any) {
+      // Log errors from within the fetchGitHubAPI call or processing
+      console.error(`API Route /api/github: Error during data fetching/processing:`, fetchError)
+      return NextResponse.json({ error: 'Internal Server Error during fetch' }, { status: 500 })
+    }
+
+  } catch (handlerError: any) {
+    // Catch any synchronous errors at the top level of the handler
+    console.error("API Route /api/github: Top-level handler error:", handlerError)
+    // Return a generic error response
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 } 

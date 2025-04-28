@@ -8,8 +8,13 @@ async function fetchGitHubAPI(path: string) {
   const headers: HeadersInit = {
     Accept: 'application/vnd.github.v3+json',
   }
+  // Log whether the token is present *before* adding the header
+  console.log(`Inside fetchGitHubAPI - GITHUB_TOKEN is defined: ${!!GITHUB_TOKEN}`)
   if (GITHUB_TOKEN) {
     headers['Authorization'] = `token ${GITHUB_TOKEN}`
+    console.log('Authorization header added.') // Log if the header is added
+  } else {
+    console.log('Authorization header NOT added because GITHUB_TOKEN is missing.')
   }
 
   const url = `https://api.github.com${path}`

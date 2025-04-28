@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic"; // Force dynamic rendering
-
 import { NextResponse } from 'next/server'
 
 console.log("Loading /api/test/route.ts module...")

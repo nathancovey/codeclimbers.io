@@ -1,27 +1,23 @@
 console.log("Loading /api/github/route.ts module...")
 
-export const dynamic = "force-dynamic"; // Force dynamic rendering
-
 import { NextResponse, NextRequest } from 'next/server'
-
-// Remove logging here as it didn't show up
-// console.log(`GITHUB_PAT value read: ...`)
 
 async function fetchGitHubAPI(path: string, token: string | undefined) {
   const headers: HeadersInit = {
-    Accept: 'application/vnd.github.v3+json',
+    Accept: 'application/vnd.github.v3+json'
   }
   // Log whether the token was *received* by the function
-  console.log(`Inside fetchGitHubAPI - received token is defined: ${!!token}`)
+  console.log(`[DEV] Inside fetchGitHubAPI - received token defined: ${!!token}, length: ${token?.length ?? 0}`)
   if (token) {
     headers['Authorization'] = `token ${token}` // Use the passed token
-    console.log('Authorization header added using passed token.')
+    console.log('[DEV] Authorization header added using passed token.')
   } else {
-    console.log('Authorization header NOT added because passed token is missing.')
+    console.log('[DEV] Authorization header NOT added because passed token is missing.')
   }
 
   const url = `https://api.github.com${path}`
-  console.log(`Fetching from GitHub API: ${url}`)
+  console.log(`[DEV] Fetching from GitHub API URL: ${url}`)
+  console.log(`[DEV] Fetching with Headers: ${JSON.stringify(headers)}`)
 
   try {
     const response = await fetch(url, { 
@@ -30,13 +26,17 @@ async function fetchGitHubAPI(path: string, token: string | undefined) {
       next: { revalidate: 60 } // Revalidate every 60 seconds
     })
 
+    console.log(`[DEV] GitHub Response Status: ${response.status} ${response.statusText}`)
+
     if (!response.ok) {
       console.error(`GitHub API Error (${url}): ${response.status} ${response.statusText}`)
       const errorBody = await response.text()
       console.error(`GitHub API Error Body: ${errorBody}`)
       return { error: `GitHub API Error: ${response.statusText}`, status: response.status }
     }
-    return await response.json()
+    const responseData = await response.json()
+    console.log("[DEV] GitHub Response Data (partial):", JSON.stringify(responseData).substring(0, 200) + "...") // Log partial success data
+    return responseData
   } catch (error: any) {
     console.error(`Network error fetching GitHub API (${url}):`, error)
     return { error: `Network error: ${error.message}`, status: 500 }
@@ -52,12 +52,14 @@ export async function GET(request: NextRequest) {
     // Read the environment variable *inside* the handler
     const githubToken = process.env.GITHUB_PAT
     // Log whether the token is defined *within the handler scope*
-    console.log(`Inside GET handler - GITHUB_PAT is defined: ${!!githubToken}`)
+    console.log(`[DEV] Inside GET handler - GITHUB_PAT is defined: ${!!githubToken}, length: ${githubToken?.length ?? 0}`)
 
     const { searchParams } = new URL(request.url)
     const owner = searchParams.get('owner')
     const repo = searchParams.get('repo')
     const what = searchParams.get('what') || 'stars' // Default to fetching stars
+
+    console.log(`[DEV] API Route /api/github received params: owner=${owner}, repo=${repo}, what=${what}`)
 
     if (!owner) {
       console.error("API Route /api/github: Missing owner parameter") // Log error before returning
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(contributors)
 
         default:
-          console.error(`API Route /api/github: Invalid value for \'what\' parameter: ${what}`) // Log error
+          console.error(`API Route /api/github: Invalid value for 'what' parameter: ${what}`) // Log error
           return NextResponse.json({ error: 'Invalid value for \'what\' parameter' }, { status: 400 })
       }
     } catch (fetchError: any) {

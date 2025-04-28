@@ -40,6 +40,9 @@ async function fetchGitHubAPI(path: string, token: string | undefined) {
 }
 
 export async function GET(request: NextRequest) {
+  // Simplest possible log to check if the handler is entered
+  console.log("API Route /api/github GET handler started")
+
   // Read the environment variable *inside* the handler
   const githubToken = process.env.GITHUB_PAT
   // Log whether the token is defined *within the handler scope*

@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server'
 
 const GITHUB_TOKEN = process.env.GITHUB_PAT
+// Add logging to verify the token in the environment
+console.log(`GITHUB_PAT value read: ${GITHUB_TOKEN ? 'Token loaded (length: ' + GITHUB_TOKEN.length + ')' : 'Token NOT loaded or empty'}`)
 
 async function fetchGitHubAPI(path: string) {
   const headers: HeadersInit = {

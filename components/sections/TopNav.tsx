@@ -7,7 +7,7 @@ import { formatCount } from '../../lib/utils'
 async function getFollowers(owner: string): Promise<number | null> {
   // Determine the base URL based on environment
   const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
+    ? `https://codeclimbersio.vercel.app/`
     : 'http://localhost:3000' // Default to localhost if not on Vercel
   const apiUrl = `${baseUrl}/api/github?owner=${owner}&what=followers`
 

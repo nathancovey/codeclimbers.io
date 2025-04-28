@@ -1,8 +1,5 @@
-// import { GITHUB_PAT } from './constants' // No longer importing PAT here
-
 export type GitHubData = Record<string, any> | { error: string; status: number }
 
-// Define specific types for expected data structures if possible
 export interface Contributor {
   login: string
   avatar_url: string
@@ -18,13 +15,9 @@ export interface UserInfo {
   followers?: number
 }
 
-/**
- * Fetches data from the GitHub API.
- * Handles common headers and basic error handling.
- */
 export async function fetchGitHubData(
   path: string,
-  token: string | undefined // Removed default assignment
+  token: string | undefined
 ): Promise<GitHubData> {
   if (!token) {
     console.error('[lib/github] GitHub token was not provided.')
@@ -34,20 +27,16 @@ export async function fetchGitHubData(
   const headers: HeadersInit = {
     Accept: 'application/vnd.github.v3+json',
     Authorization: `token ${token}`,
-    'User-Agent': 'codeclimbers-io-app', // Use a consistent User-Agent
+    'User-Agent': 'codeclimbers-io-app',
     'X-GitHub-Api-Version': '2022-11-28',
   }
 
   const url = `https://api.github.com${path}`
-  console.log(`[lib/github] Fetching: ${url}`)
-  // Avoid logging headers here as they contain the token
 
   try {
     const response = await fetch(url, {
       headers,
-      // Use Next.js caching/revalidation features if called from components/routes
-      // Adjust cache options as needed
-      next: { revalidate: 60 }, // Example: Revalidate every 60 seconds
+      next: { revalidate: 300 },
     })
 
     console.log(`[lib/github] Response Status for ${url}: ${response.status} ${response.statusText}`)
@@ -60,7 +49,6 @@ export async function fetchGitHubData(
     }
 
     const data = await response.json()
-    // console.log(`[lib/github] Response Data (partial) for ${url}:`, JSON.stringify(data).substring(0, 100) + '...')
     return data
   } catch (error: any) {
     console.error(`[lib/github] Network error fetching GitHub API (${url}):`, error)
@@ -68,19 +56,15 @@ export async function fetchGitHubData(
   }
 }
 
-// --- Specific fetch functions (optional, but good practice) ---
-
 export async function getRepoContributors(
   owner: string,
   repo: string,
   token?: string
 ): Promise<Contributor[] | { error: string; status: number }> {
   const data = await fetchGitHubData(`/repos/${owner}/${repo}/contributors`, token)
-  // Check if the fetched data is an error object
   if (typeof data === 'object' && data !== null && 'error' in data) {
-    return data as { error: string; status: number } // Type assertion for the error case
+    return data as { error: string; status: number }
   }
-  // Otherwise, assume it's the contributor array (add more validation if needed)
   return Array.isArray(data) ? (data as Contributor[]) : []
 }
 
@@ -93,7 +77,7 @@ export async function getRepoStars(
   if (typeof data === 'object' && data !== null && 'error' in data) {
     return data as { error: string; status: number }
   }
-  return data as RepoInfo // Assume RepoInfo otherwise
+  return data as RepoInfo
 }
 
 export async function getUserFollowers(
@@ -104,5 +88,5 @@ export async function getUserFollowers(
   if (typeof data === 'object' && data !== null && 'error' in data) {
     return data as { error: string; status: number }
   }
-  return data as UserInfo // Assume UserInfo otherwise
+  return data as UserInfo
 } 

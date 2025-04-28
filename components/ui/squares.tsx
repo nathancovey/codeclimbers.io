@@ -139,8 +139,6 @@ const Squares: React.FC<SquaresProps> = ({
         (mouseY + (gridOffset.current.y % squareSize)) / squareSize
       );
 
-      console.log(`Mouse move: (${mouseX}, ${mouseY}), Calculated grid hover: (${hoveredGridX}, ${hoveredGridY})`);
-
       if (
         !hoveredSquareRef.current ||
         hoveredSquareRef.current.x !== hoveredGridX ||
@@ -151,7 +149,6 @@ const Squares: React.FC<SquaresProps> = ({
     };
 
     const handleMouseLeave = () => {
-      console.log('Mouse leave');
       hoveredSquareRef.current = null;
     };
 

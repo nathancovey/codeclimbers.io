@@ -22,32 +22,22 @@ const teamMembers = [
   },
 ]
 
-// Removed the old getContributors function that called the API route
-
 export async function Team() {
   const owner = 'CodeClimbersIO'
   const githubToken = process.env.GITHUB_PAT // Read the token here
 
   if (!githubToken) {
     console.error('[Team Component] GITHUB_PAT environment variable is not set.')
-    // Handle the error appropriately in the UI, maybe return early or show error state
   }
 
-  // Fetch contributors for all apps concurrently using the lib function
   const contributorPromises = appsData.map((app) => {
-    console.log(
-      `[Team Component] Getting contributors for ${owner}/${app.repoName}`
-    )
-    // Pass the token directly to the lib function
     return getRepoContributors(owner, app.repoName, githubToken)
   })
 
   const allContributorsResults = await Promise.all(contributorPromises)
 
-  // Aggregate contributors and sum contributions, handling potential errors
   const aggregatedContributors: { [login: string]: ContributorData } = {}
   allContributorsResults.forEach((result) => {
-    // Check if the result is an error before processing
     if (typeof result === 'object' && result !== null && 'error' in result) {
       console.error(
         `[Team Component] Failed to fetch contributors: ${result.error}`

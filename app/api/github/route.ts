@@ -1,18 +1,11 @@
-console.log("Loading /api/github/route.ts module...")
-
 import { NextResponse, NextRequest } from 'next/server'
 import {
   getRepoContributors,
   getRepoStars,
   getUserFollowers,
-} from '@/lib/github' // Assuming @/ points to src or root
-
-// Removed the fetchGitHubAPI function from here
+} from '@/lib/github'
 
 export async function GET(request: NextRequest) {
-  // Note: Removed the top-level console.log("Loading...") as it might run less predictably
-  // Logging inside the handler is more reliable
-  console.log("API Route /api/github GET handler started")
 
   const githubToken = process.env.GITHUB_PAT
   if (!githubToken) {
@@ -22,18 +15,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-  console.log(
-    `[API Route] GITHUB_PAT is defined, length: ${githubToken.length}`
-  )
 
   const { searchParams } = new URL(request.url)
   const owner = searchParams.get('owner')
   const repo = searchParams.get('repo')
-  const what = searchParams.get('what') || 'stars' // Default to fetching stars
-
-  console.log(
-    `[API Route] Received params: owner=${owner}, repo=${repo}, what=${what}`
-  )
+  const what = searchParams.get('what') || 'stars'
 
   if (!owner) {
     console.error("[API Route] Missing owner parameter")

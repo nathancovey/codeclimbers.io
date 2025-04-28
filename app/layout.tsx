@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { PHProvider } from "./providers";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -19,11 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${inter.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <PHProvider>
+        <body
+          className={`${inter.variable} antialiased`}
+        >
+          {children}
+        </body>
+      </PHProvider>
     </html>
   );
 }

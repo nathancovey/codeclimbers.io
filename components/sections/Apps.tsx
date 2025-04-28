@@ -11,15 +11,14 @@ import { ArrowUpRight, Star } from "lucide-react"
 import Image from 'next/image'
 import { formatCount } from '../../lib/utils'
 import { Badge } from "../ui/badge"
+import { getRepoStars } from '@/lib/github'
 
-// Refactored component accepting stars prop
 const GitHubStarsButton = ({ org, repoName, stars }: { org: string; repoName: string; stars: number | null }) => {
   let displayStars: string = '-'
 
   if (stars !== null) {
     displayStars = formatCount(stars)
-  } // Otherwise, default to '-' indicating error or loading issue during server fetch
-
+  }
   return (
     <Button variant="secondary" asChild>
       <a
@@ -35,7 +34,6 @@ const GitHubStarsButton = ({ org, repoName, stars }: { org: string; repoName: st
   )
 }
 
-// Export appsData so it can be imported elsewhere
 export const appsData = [
   {
     title: "Ebb",
@@ -53,37 +51,39 @@ export const appsData = [
   },
 ]
 
-async function getStars(owner: string, repo: string): Promise<number | null> {
-  // Determine the base URL based on environment
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000' // Default to localhost if not on Vercel
-  const apiUrl = `${baseUrl}/api/github?owner=${owner}&repo=${repo}`
-
-  try {
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-    })
-    if (!res.ok) {
-      console.error(`Failed to fetch stars for ${owner}/${repo}: ${res.statusText}`)
-      return null
-    }
-    const data = await res.json()
-    return typeof data.stars === 'number' ? data.stars : null
-  } catch (error) {
-    console.error(`Error fetching stars for ${owner}/${repo}:`, error)
-    return null
-  }
-}
-
-// Make Apps an async Server Component
 export async function Apps() {
   const githubOrg = 'CodeClimbersIO'
+  const githubToken = process.env.GITHUB_PAT
 
-  // Fetch stars for all apps concurrently
-  const starsData = await Promise.all(
-    appsData.map(app => getStars(githubOrg, app.repoName))
-  )
+  let starsData: (number | null)[] = []
+
+  if (githubToken) {
+    const starsPromises = appsData.map((app) =>
+      getRepoStars(githubOrg, app.repoName, githubToken)
+    )
+    const starsResults = await Promise.all(starsPromises)
+
+    starsData = starsResults.map((result, index) => {
+      const app = appsData[index]
+      if (typeof result === 'object' && result !== null && !('error' in result)) {
+        return result.stargazers_count ?? null
+      } else {
+        if (typeof result === 'object' && result !== null && 'error' in result) {
+          console.error(
+            `[Apps Component] Failed to fetch stars for ${githubOrg}/${app.repoName}: ${result.error}`
+          )
+        } else {
+            console.error(
+            `[Apps Component] Unknown error fetching stars for ${githubOrg}/${app.repoName}`
+          )
+        }
+        return null
+      }
+    })
+  } else {
+    console.error('[Apps Component] GITHUB_PAT environment variable is not set.')
+    starsData = appsData.map(() => null)
+  }
 
   return (
     <section id="apps" className="py-16 bg-secondary/50">

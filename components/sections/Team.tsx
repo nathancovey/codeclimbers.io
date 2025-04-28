@@ -2,81 +2,70 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Card, CardContent } from '../ui/card'
 import { XIcon } from '../icons/XIcon'
 import { appsData } from './Apps'
-
-// Define a type for the app data structure
-interface AppData {
-  title: string;
-  description: string;
-  websiteUrl: string;
-  repoName: string;
-  icon: string;
-}
-
-interface ContributorData {
-  login: string
-  avatar_url: string
-  contributions: number
-  html_url: string
-}
+import {
+  getRepoContributors,
+  type Contributor as ContributorData,
+} from '@/lib/github'
 
 const teamMembers = [
-  { name: "Paul Hovley", role: "Co-Founder", avatar: "/images/paul.jpg", xProfile: "https://x.com/paulhovley" },
-  { name: "Nathan Covey", role: "Co-Founder", avatar: "/images/nathan.jpg", xProfile: "https://x.com/nathan_covey" },
+  {
+    name: 'Paul Hovley',
+    role: 'Co-Founder',
+    avatar: '/images/paul.jpg',
+    xProfile: 'https://x.com/paulhovley',
+  },
+  {
+    name: 'Nathan Covey',
+    role: 'Co-Founder',
+    avatar: '/images/nathan.jpg',
+    xProfile: 'https://x.com/nathan_covey',
+  },
 ]
 
-async function getContributors(owner: string, repo: string): Promise<ContributorData[]> {
-  // Determine the base URL based on environment
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000' // Default to localhost if not on Vercel
-  const apiUrl = `${baseUrl}/api/github?owner=${owner}&repo=${repo}&what=contributors`
-  
-  // Log the constructed API URL right before fetching
-  console.log(`[Team Component] Fetching contributors from: ${apiUrl}`) 
-
-  try {
-    const res = await fetch(apiUrl, {
-      cache: 'no-store', // Or adjust caching as needed
-    })
-
-    if (!res.ok) {
-      console.error(`Failed to fetch contributors for ${owner}/${repo}: ${res.status} ${res.statusText}`)
-      return [] // Return empty array on fetch failure
-    }
-
-    const data: ContributorData[] = await res.json()
-    // Optional: Limit the number of contributors displayed
-    // return data.slice(0, 6)
-    return data
-
-  } catch (error) {
-    console.error(`Error fetching contributors for ${owner}/${repo}:`, error)
-    return [] // Return empty array on error
-  }
-}
+// Removed the old getContributors function that called the API route
 
 export async function Team() {
   const owner = 'CodeClimbersIO'
-  const repo = 'cli'
+  const githubToken = process.env.GITHUB_PAT // Read the token here
 
-  // Fetch contributors for all apps concurrently
-  const allContributorsNested = await Promise.all(
-    appsData.map((app: AppData) => getContributors(owner, app.repoName))
-  )
+  if (!githubToken) {
+    console.error('[Team Component] GITHUB_PAT environment variable is not set.')
+    // Handle the error appropriately in the UI, maybe return early or show error state
+  }
 
-  // Aggregate contributors and sum contributions
-  const aggregatedContributors: { [login: string]: ContributorData } = {}
-  allContributorsNested.flat().forEach((c: ContributorData) => {
-    if (aggregatedContributors[c.login]) {
-      aggregatedContributors[c.login].contributions += c.contributions
-    } else {
-      aggregatedContributors[c.login] = { ...c } // Add new contributor
-    }
+  // Fetch contributors for all apps concurrently using the lib function
+  const contributorPromises = appsData.map((app) => {
+    console.log(
+      `[Team Component] Getting contributors for ${owner}/${app.repoName}`
+    )
+    // Pass the token directly to the lib function
+    return getRepoContributors(owner, app.repoName, githubToken)
   })
 
-  // Convert map back to array, filter out bot, sort by contributions, and take top 9
+  const allContributorsResults = await Promise.all(contributorPromises)
+
+  // Aggregate contributors and sum contributions, handling potential errors
+  const aggregatedContributors: { [login: string]: ContributorData } = {}
+  allContributorsResults.forEach((result) => {
+    // Check if the result is an error before processing
+    if (typeof result === 'object' && result !== null && 'error' in result) {
+      console.error(
+        `[Team Component] Failed to fetch contributors: ${result.error}`
+      )
+      return
+    }
+
+    result.forEach((c: ContributorData) => {
+      if (aggregatedContributors[c.login]) {
+        aggregatedContributors[c.login].contributions += c.contributions
+      } else {
+        aggregatedContributors[c.login] = { ...c }
+      }
+    })
+  })
+
   const sortedContributors = Object.values(aggregatedContributors)
-    .filter(c => c.login !== 'github-actions[bot]') // Filter out the bot
+    .filter((c) => c.login !== 'github-actions[bot]')
     .sort((a, b) => b.contributions - a.contributions)
     .slice(0, 9) // Limit to top 9 contributors
 

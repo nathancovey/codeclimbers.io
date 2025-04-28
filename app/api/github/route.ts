@@ -1,5 +1,7 @@
 console.log("Loading /api/github/route.ts module...")
 
+export const dynamic = "force-dynamic"; // Force dynamic rendering
+
 import { NextResponse, NextRequest } from 'next/server'
 
 // Remove logging here as it didn't show up

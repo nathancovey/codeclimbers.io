@@ -2,6 +2,9 @@ import { TopNav } from '@/components/sections/TopNav'
 import { Footer } from '@/components/sections/Footer'
 import { Button } from '@/components/ui/button'
 
+// Force dynamic rendering because TopNav fetches data dynamically
+export const dynamic = 'force-dynamic'
+
 // Make this an async component to allow awaiting TopNav if necessary
 export default async function NotFound() {
   return (

@@ -22,7 +22,7 @@ export function Mission() {
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
-        <Card className="max-w-2xl mx-auto overflow-hidden">
+        <Card className="max-w-2xl mx-auto overflow-hidden rounded-none">
           <CardContent className="p-8 md:p-10 text-left">
             <h2 className="text-3xl font-bold mb-8 text-foreground leading-tight">
               Manifesto

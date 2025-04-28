@@ -14,7 +14,7 @@ export const Hero = () => {
           hoverFillColor='#222'
         />
       </div>
-      <div className="relative pt-16 flex items-center justify-center" style={{ minHeight: 'calc(100vh - 8rem)' }}>
+      <div className="relative pt-16 flex items-center justify-center min-h-screen md:min-h-[calc(100vh-8rem)]">
         <div className="container mx-auto px-4 text-center flex flex-col items-center">
           <p className="text-5xl text-foreground font-bold mb-8 mx-auto leading-normal">
             Building <Highlight>delightful</Highlight><br /> open source apps.

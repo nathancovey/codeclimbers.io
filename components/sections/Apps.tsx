@@ -91,7 +91,7 @@ export async function Apps() {
         <h2 className="text-3xl font-bold text-center mb-12">Our Apps</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {appsData.map((app, index) => (
-            <Card key={index} className="flex flex-col">
+            <Card key={index} className="flex flex-col rounded-none">
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-24 relative flex items-center justify-center">
@@ -127,7 +127,7 @@ export async function Apps() {
             </Card>
           ))}
 
-          <Card className="flex flex-col border-dashed border-border/60 bg-secondary/30">
+          <Card className="flex flex-col border-dashed border-border/60 bg-secondary/30 rounded-none">
              <CardContent className="flex flex-col flex-grow items-center justify-center p-6 text-center">
                <h3 className="text-xl font-medium text-muted-foreground mb-2">More coming soon!</h3>
                <p className="text-sm text-muted-foreground/80 max-w-xs">We're always building new slop. Check back later for new additions.</p>

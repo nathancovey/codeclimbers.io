@@ -1,3 +1,5 @@
+console.log("Loading /api/github/route.ts module...")
+
 import { NextResponse, NextRequest } from 'next/server'
 
 // Remove logging here as it didn't show up
